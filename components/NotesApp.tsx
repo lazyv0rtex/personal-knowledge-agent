@@ -187,8 +187,8 @@ export default function NotesApp() {
 
       {/* Left Panel */}
       <aside
-        className="w-60 shrink-0 border-r flex flex-col"
-        style={sidebarStyle}
+        className="shrink-0 border-r flex flex-col transition-all duration-200"
+        style={{ ...sidebarStyle, width: leftPanel === "browser" ? "480px" : leftPanel === "calc" ? "220px" : "240px" }}
       >
         {leftPanel === "files" && (
           <>
