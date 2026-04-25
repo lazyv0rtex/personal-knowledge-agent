@@ -427,7 +427,7 @@ export default function NotesApp() {
               <X className="h-4 w-4" />
             </button>
           </div>
-          <AIChat />
+          <AIChat activeNote={selectedNote} />
         </aside>
       )}
 
