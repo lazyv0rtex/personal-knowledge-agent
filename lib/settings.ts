@@ -92,7 +92,7 @@ export async function getEffectiveSettings(): Promise<Settings | null> {
   const stored = await readSettings();
   if (stored?.apiKey) return stored;
 
-  // Fall back to env for the stored provider, or to the default (openrouter) from env.
+  // Try env for the stored provider first
   const provider: Provider = stored?.provider ?? "openrouter";
   const envKey = envKeyFor(provider);
   if (envKey) {
@@ -102,6 +102,13 @@ export async function getEffectiveSettings(): Promise<Settings | null> {
       model: stored?.model || PROVIDER_DEFAULTS[provider].model,
     };
   }
+
+  // Last resort: scan all providers for any env key
+  for (const p of Object.keys(PROVIDER_DEFAULTS) as Provider[]) {
+    const k = envKeyFor(p);
+    if (k) return { provider: p, apiKey: k, model: PROVIDER_DEFAULTS[p].model };
+  }
+
   return null;
 }
 
