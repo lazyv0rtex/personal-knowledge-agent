@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  height: 100%;
+  background: #0b0d10;
+  color: #e6e8eb;
+}
+
+* { box-sizing: border-box; }
+
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out;
+}
+
+.scrollbar-thin::-webkit-scrollbar { width: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #2a313a; border-radius: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+.prose-chat p { margin: 0.25rem 0; }
+.prose-chat pre {
+  background: #0a0c0f; padding: 0.75rem; border-radius: 8px;
+  overflow-x: auto; border: 1px solid #1f242b;
+}
+.prose-chat code { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.875rem; }
+.prose-chat ul { list-style: disc; padding-left: 1.25rem; }
+.prose-chat ol { list-style: decimal; padding-left: 1.25rem; }
+.prose-chat a { color: #a899ff; text-decoration: underline; }
+
+/* MDEditor dark theme overrides */
+.w-md-editor {
+  background: transparent !important;
+  color: #e6e8eb !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.w-md-editor-toolbar {
+  background: #111418 !important;
+  border-bottom: 1px solid #1f242b !important;
+}
+
+.w-md-editor-text-pre, .w-md-editor-text-input {
+  background: transparent !important;
+  color: #e6e8eb !important;
+}
+
+.w-md-editor-text-pre code {
+  color: #e6e8eb !important;
+}
+
+.wmde-markdown {
+  background: transparent !important;
+  color: #e6e8eb !important;
+}
+
+.wmde-markdown code {
+  background: #0a0c0f !important;
+  color: #e6e8eb !important;
+}
+
+.wmde-markdown pre {
+  background: #0a0c0f !important;
+  border: 1px solid #1f242b !important;
+}
