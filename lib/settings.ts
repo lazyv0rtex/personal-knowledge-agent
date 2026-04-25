@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { dataDir } from "./paths";
 
 export type Provider = "openrouter" | "openai" | "anthropic" | "google";
 
@@ -45,10 +46,6 @@ export const PROVIDER_DEFAULTS: Record<
     modelHint: "e.g. gemini-1.5-flash, gemini-1.5-pro",
   },
 };
-
-function dataDir(): string {
-  return path.join(process.cwd(), ".data");
-}
 
 function settingsFile(): string {
   return path.join(dataDir(), "settings.json");
