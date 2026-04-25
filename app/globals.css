@@ -28,11 +28,44 @@ html, body {
   animation: fade-in 0.15s ease-out;
 }
 
-.scrollbar-thin::-webkit-scrollbar { width: 8px; }
+.scrollbar-thin::-webkit-scrollbar { width: 6px; }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #2a313a; border-radius: 8px;
+  background: var(--border, #2a313a); border-radius: 8px;
 }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* Calculator button classes */
+.num-btn {
+  background: var(--panel, #1a1e24);
+  color: var(--text, #e6e8eb);
+  border: 1px solid var(--border, #1f242b);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+}
+.num-btn:hover { opacity: 0.85; }
+
+.op-btn {
+  background: color-mix(in srgb, var(--accent, #7c5cff) 25%, transparent);
+  color: var(--accent, #7c5cff);
+  border: 1px solid color-mix(in srgb, var(--accent, #7c5cff) 40%, transparent);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+}
+.op-btn:hover { opacity: 0.85; }
+
+.eq-btn {
+  background: var(--accent, #7c5cff);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.4);
+}
+.eq-btn:hover { opacity: 0.9; }
+
+.opacity-btn {
+  background: var(--panel, #1a1e24);
+  color: var(--text-muted, #8b949e);
+  border: 1px solid var(--border, #1f242b);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+}
+.opacity-btn:hover { opacity: 0.85; }
 
 .prose-chat p { margin: 0.25rem 0; }
 .prose-chat pre {
