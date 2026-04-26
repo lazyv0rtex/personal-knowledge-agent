@@ -6,7 +6,6 @@ import {
   Brain,
   FileText,
   Settings as SettingsIcon,
-  Github,
   Palette,
   Plus,
   RefreshCw,
@@ -14,10 +13,10 @@ import {
   X,
   Calculator as CalcIcon,
   Globe,
-  ChevronLeft,
-  ChevronRight,
   Check,
-  FolderSync,
+  Pencil,
+  Trash2,
+  FilePlus2,
 } from "lucide-react";
 import FileTree from "./FileTree";
 import NoteEditor from "./NoteEditor";
@@ -35,8 +34,9 @@ type NoteTree = {
   children?: NoteTree[];
 };
 
-type Tab = "notes" | "settings" | "github" | "themes";
+type Tab = "notes" | "themes";
 type LeftPanel = "files" | "calc" | "browser";
+type FileFormat = ".md" | ".txt" | ".mdx";
 
 export default function NotesApp() {
   const { theme, setThemeId } = useTheme();
@@ -50,8 +50,9 @@ export default function NotesApp() {
   const [syncMsg, setSyncMsg] = useState("");
   const [newNoteName, setNewNoteName] = useState("");
   const [showNewNote, setShowNewNote] = useState(false);
-  const [githubStatus, setGithubStatus] = useState<"idle" | "pushing" | "done" | "error">("idle");
-  const [githubMsg, setGithubMsg] = useState("");
+  const [defaultFormat, setDefaultFormat] = useState<FileFormat>(".md");
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   useHotkeys("mod+k", (e) => {
     e.preventDefault();
@@ -92,31 +93,41 @@ export default function NotesApp() {
 
   async function handleNewNote() {
     if (!newNoteName.trim()) return;
-    const name = newNoteName.trim().endsWith(".md") ? newNoteName.trim() : newNoteName.trim() + ".md";
+    const base = newNoteName.trim();
+    const hasExt = [".md", ".txt", ".mdx", ".markdown"].some((e) => base.endsWith(e));
+    const name = hasExt ? base : base + defaultFormat;
     try {
       await fetch(`/api/notes/${name}`, { method: "POST" });
       await loadTree();
       setSelectedNote(name);
       setShowNewNote(false);
       setNewNoteName("");
+      setActiveTab("notes");
     } catch (e) {
       console.error("Create note failed:", e);
     }
   }
 
-  async function handleGithubPush() {
-    setGithubStatus("pushing");
-    setGithubMsg("Pushing to GitHub...");
-    try {
-      const res = await fetch("/api/github/push", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Push failed");
-      setGithubStatus("done");
-      setGithubMsg(data.message || "Pushed successfully!");
-    } catch (e: any) {
-      setGithubStatus("error");
-      setGithubMsg(e.message || "Push failed");
-    }
+  async function handleDelete(path: string) {
+    if (!confirm(`Delete "${path}"?`)) return;
+    await fetch(`/api/notes/${path}`, { method: "DELETE" });
+    if (selectedNote === path) setSelectedNote(null);
+    await loadTree();
+  }
+
+  async function handleRename() {
+    if (!renaming || !renameValue.trim()) return;
+    const hasExt = [".md", ".txt", ".mdx", ".markdown"].some((e) => renameValue.trim().endsWith(e));
+    const newName = hasExt ? renameValue.trim() : renameValue.trim() + defaultFormat;
+    await fetch(`/api/notes/${renaming}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newPath: newName }),
+    });
+    if (selectedNote === renaming) setSelectedNote(newName);
+    setRenaming(null);
+    setRenameValue("");
+    await loadTree();
   }
 
   const sidebarStyle = {
@@ -176,9 +187,9 @@ export default function NotesApp() {
           <Palette className="h-4 w-4" />
         </button>
         <button
-          onClick={() => { setActiveTab("settings"); setSettingsOpen(true); }}
+          onClick={() => setSettingsOpen(true)}
           className="w-8 h-8 rounded-lg flex items-center justify-center transition mb-2"
-          style={activeTab === "settings" ? tabActiveStyle : tabInactiveStyle}
+          style={settingsOpen ? tabActiveStyle : tabInactiveStyle}
           title="Settings"
         >
           <SettingsIcon className="h-4 w-4" />
@@ -210,7 +221,7 @@ export default function NotesApp() {
             </div>
 
             {showNewNote && (
-              <div className="px-3 py-2 border-b" style={{ borderColor: theme.border }}>
+              <div className="px-3 py-2 border-b space-y-1.5" style={{ borderColor: theme.border }}>
                 <input
                   autoFocus
                   value={newNoteName}
@@ -219,13 +230,41 @@ export default function NotesApp() {
                     if (e.key === "Enter") handleNewNote();
                     if (e.key === "Escape") { setShowNewNote(false); setNewNoteName(""); }
                   }}
-                  placeholder="note-name.md"
+                  placeholder={`note-name${defaultFormat}`}
                   className="w-full text-xs px-2 py-1.5 rounded focus:outline-none"
-                  style={{
-                    background: theme.bg,
-                    border: `1px solid ${theme.accent}`,
-                    color: theme.text,
+                  style={{ background: theme.bg, border: `1px solid ${theme.accent}`, color: theme.text }}
+                />
+                <div className="flex gap-1">
+                  {([".md", ".txt", ".mdx"] as FileFormat[]).map((fmt) => (
+                    <button
+                      key={fmt}
+                      onClick={() => setDefaultFormat(fmt)}
+                      className="text-[10px] px-2 py-0.5 rounded transition font-mono"
+                      style={defaultFormat === fmt
+                        ? { background: theme.accent, color: "#fff" }
+                        : { background: theme.border, color: theme.textMuted }
+                      }
+                    >
+                      {fmt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {renaming && (
+              <div className="px-3 py-2 border-b space-y-1" style={{ borderColor: theme.border }}>
+                <p className="text-[10px]" style={{ color: theme.textMuted }}>Rename: <span style={{ color: theme.accent }}>{renaming}</span></p>
+                <input
+                  autoFocus
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRename();
+                    if (e.key === "Escape") { setRenaming(null); setRenameValue(""); }
                   }}
+                  className="w-full text-xs px-2 py-1.5 rounded focus:outline-none"
+                  style={{ background: theme.bg, border: `1px solid ${theme.accent}`, color: theme.text }}
                 />
               </div>
             )}
@@ -233,8 +272,10 @@ export default function NotesApp() {
             <FileTree
               tree={tree}
               selectedPath={selectedNote}
-              onSelect={setSelectedNote}
+              onSelect={(p) => { setSelectedNote(p); setActiveTab("notes"); }}
               onNew={() => setShowNewNote(true)}
+              onDelete={handleDelete}
+              onRename={(p) => { setRenaming(p); setRenameValue(p.split("/").pop() || p); }}
             />
 
             <div className="p-2 border-t" style={{ borderColor: theme.border }}>
@@ -293,7 +334,7 @@ export default function NotesApp() {
           style={{ background: theme.panel, borderColor: theme.border }}
         >
           <div className="flex items-center gap-0.5">
-            {(["notes", "github", "themes"] as Tab[]).map((tab) => (
+            {(["notes", "themes"] as Tab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -301,11 +342,30 @@ export default function NotesApp() {
                 style={activeTab === tab ? tabActiveStyle : tabInactiveStyle}
               >
                 {tab === "notes" && <FileText className="h-3.5 w-3.5" />}
-                {tab === "github" && <Github className="h-3.5 w-3.5" />}
                 {tab === "themes" && <Palette className="h-3.5 w-3.5" />}
                 <span className="capitalize">{tab}</span>
               </button>
             ))}
+            {selectedNote && (
+              <div className="flex items-center gap-1 ml-2 pl-2" style={{ borderLeft: `1px solid ${theme.border}` }}>
+                <button
+                  onClick={() => { setRenaming(selectedNote); setRenameValue(selectedNote.split("/").pop() || selectedNote); setLeftPanel("files"); }}
+                  className="p-1.5 rounded transition"
+                  style={{ color: theme.textMuted }}
+                  title="Rename note"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => handleDelete(selectedNote)}
+                  className="p-1.5 rounded transition"
+                  style={{ color: theme.textMuted }}
+                  title="Delete note"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
 
           <button
@@ -332,38 +392,6 @@ export default function NotesApp() {
         <div className="flex-1 overflow-hidden">
           {activeTab === "notes" && (
             <NoteEditor notePath={selectedNote} onClose={() => setSelectedNote(null)} />
-          )}
-
-          {activeTab === "github" && (
-            <div className="p-8 max-w-xl">
-              <h2 className="text-lg font-bold mb-1" style={{ color: theme.text }}>GitHub Sync</h2>
-              <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
-                Push your notes to <code className="text-xs px-1 py-0.5 rounded" style={{ background: theme.border }}>lazyv0rtex/personal-knowledge-agent</code>
-              </p>
-
-              <button
-                onClick={handleGithubPush}
-                disabled={githubStatus === "pushing"}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition shadow-lg"
-                style={{ background: theme.accent, color: "#fff", opacity: githubStatus === "pushing" ? 0.7 : 1 }}
-              >
-                <FolderSync className={`h-4 w-4 ${githubStatus === "pushing" ? "animate-spin" : ""}`} />
-                {githubStatus === "pushing" ? "Pushing..." : "Push to GitHub"}
-              </button>
-
-              {githubMsg && (
-                <div
-                  className="mt-4 px-4 py-3 rounded-xl text-sm"
-                  style={{
-                    background: githubStatus === "error" ? "#ff4d4d22" : theme.accent + "22",
-                    color: githubStatus === "error" ? "#ff6b6b" : theme.accent,
-                    border: `1px solid ${githubStatus === "error" ? "#ff4d4d44" : theme.accent + "44"}`,
-                  }}
-                >
-                  {githubMsg}
-                </div>
-              )}
-            </div>
           )}
 
           {activeTab === "themes" && (
@@ -433,10 +461,7 @@ export default function NotesApp() {
 
       <SettingsModal
         open={settingsOpen}
-        onClose={() => {
-          setSettingsOpen(false);
-          setActiveTab("notes");
-        }}
+        onClose={() => setSettingsOpen(false)}
         onSaved={() => {}}
       />
     </div>

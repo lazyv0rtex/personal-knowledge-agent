@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getNote, saveNote, deleteNote, createNote } from "@/lib/notes";
+import { getNote, saveNote, deleteNote, createNote, renameNote } from "@/lib/notes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +35,17 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to create note" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request, { params }: Params) {
+  try {
+    const notePath = params.path.join("/");
+    const { newPath } = await req.json();
+    await renameNote(notePath, newPath);
+    return NextResponse.json({ ok: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Failed to rename note" }, { status: 500 });
   }
 }
 

@@ -7,3 +7,4 @@ vector_store
 .data
 *.log
 .DS_Store
+.env.local
