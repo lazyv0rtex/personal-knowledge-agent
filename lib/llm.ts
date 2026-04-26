@@ -3,18 +3,13 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { getEffectiveSettings, type Settings } from "./settings";
 
-const DEFAULT_OPENROUTER_KEY = "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";
-
 export async function getChatModel(): Promise<BaseChatModel> {
   const settings = await getEffectiveSettings();
   if (settings) return buildClient(settings);
 
-  // Built-in fallback — always works
-  return buildClient({
-    provider: "openrouter",
-    apiKey: DEFAULT_OPENROUTER_KEY,
-    model: "anthropic/claude-3.5-sonnet",
-  });
+  throw new Error(
+    "No API key configured. Set OPENROUTER_API_KEY in your environment or add a key in Settings."
+  );
 }
 
 function buildClient(s: Settings): BaseChatModel {
