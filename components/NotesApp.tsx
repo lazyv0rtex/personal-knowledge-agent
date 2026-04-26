@@ -115,6 +115,34 @@ export default function NotesApp() {
     await loadTree();
   }
 
+  async function handleDuplicate(path: string) {
+    const ext = path.includes(".") ? "." + path.split(".").pop() : defaultFormat;
+    const base = path.replace(/\.[^.]+$/, "");
+    const newPath = `${base}-copy${ext}`;
+    const res = await fetch(`/api/notes/${path}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    await fetch(`/api/notes/${newPath}`, {
+      method: "POST",
+    });
+    await fetch(`/api/notes/${newPath}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: data.content }),
+    });
+    await loadTree();
+    setSelectedNote(newPath);
+    setActiveTab("notes");
+  }
+
+  async function handleNewFolder(parentPath = "") {
+    const name = prompt("Folder name:");
+    if (!name?.trim()) return;
+    const folderPath = parentPath ? `${parentPath}/${name.trim()}` : name.trim();
+    await fetch(`/api/notes/${folderPath}/.keep`, { method: "POST" });
+    await loadTree();
+  }
+
   async function handleRename() {
     if (!renaming || !renameValue.trim()) return;
     const hasExt = [".md", ".txt", ".mdx", ".markdown"].some((e) => renameValue.trim().endsWith(e));
@@ -210,14 +238,14 @@ export default function NotesApp() {
               <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>
                 Explorer
               </span>
-              <button
-                onClick={() => setShowNewNote(true)}
-                className="p-1 rounded transition hover:opacity-80"
-                style={{ color: theme.accent }}
-                title="New note"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => handleNewFolder()} className="p-1 rounded transition hover:opacity-80" style={{ color: theme.textMuted }} title="New folder">
+                  <FilePlus2 className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => setShowNewNote(true)} className="p-1 rounded transition hover:opacity-80" style={{ color: theme.accent }} title="New note">
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {showNewNote && (
@@ -276,6 +304,8 @@ export default function NotesApp() {
               onNew={() => setShowNewNote(true)}
               onDelete={handleDelete}
               onRename={(p) => { setRenaming(p); setRenameValue(p.split("/").pop() || p); }}
+              onDuplicate={handleDuplicate}
+              onNewFolder={handleNewFolder}
             />
 
             <div className="p-2 border-t" style={{ borderColor: theme.border }}>
